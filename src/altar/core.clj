@@ -23,25 +23,42 @@
     (for [button buttons]
       (midi-note-on mm1-out button 1 4))))
 
-(defn step-press [midi-msg] midi-msg)
-
-(defn step-release [midi-msg] midi-msg)
-
-(defn note-to-step [note])
+(defn blink [buttons]
+  (dorun
+    (for [button buttons]
+      (midi-note-on mm1-out button 2 4))))
 
 (defn display-step [step velocity]
   (let [note (nth [19 20 23 24 27 28 31 32] step)
         channel 4]
     (midi-note-on mm1-out note velocity channel)))
 
+(defn step-press [step] (blink [(nth [19 20 23 24 27 28 31 32] step)]))
+
+(defn update-sequencer [sequencer track-number step value]
+  (assoc sequencer track-number
+    (assoc (nth sequencer track-number)
+      step value)))
+
+(defn step-release [step]
+  (let [track (nth @sequencer @sequencer-active-track)
+        new-step-value (- 1 (nth track step))]
+    (swap! sequencer update-sequencer
+      @sequencer-active-track step new-step-value)
+    (display-step step new-step-value)))
+
+(defn note-to-step [note] (.indexOf [19 20 23 24 27 28 31 32] note))
+
 (defn display-track [track-number]
   (dorun (map-indexed display-step (nth @sequencer track-number))))
 
 (defn handler-track-btn [midi-msg]
   (turn-off #{48 49 50 51})
-  (let [note (midi-msg :data1)]
+  (let [note (midi-msg :data1)
+        track-number (- note 48)]
     (turn-on #{note})
-    (display-track (- note 48))))
+    (display-track track-number)
+    (reset! sequencer-active-track track-number)))
 
 (defn handler-default [midi-msg]
   (println (map midi-msg [:timestamp :command :data1 :data2])))
@@ -61,3 +78,5 @@
 (def receiver (midi-handle-events mm1-in handler-midi))
 
 (turn-off #{19 20 23 24 27 28 31 32 48 49 50 51})
+(turn-on #{48})
+(display-track 0)
