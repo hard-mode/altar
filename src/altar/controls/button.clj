@@ -3,26 +3,47 @@
   (:require [clojure.data :refer [diff]]))
 
 
-; Momentary button function
+; MIDI message matcher
+
+(defn midi-match [match msg]
+  (nil? (first (diff match msg))))
+
+
+; Momentary button
+
+(defn momentary- [input turn-on turn-off]
+  (fn [msg] (when (midi-match (conj input {:command :note-on}) msg) (turn-on msg))
+            (when (midi-match (conj input {:command :note-off}) msg) (turn-off msg))
+    (momentary- input turn-on turn-off)))
 
 (defn momentary
   [input turn-on turn-off]
-  {:pre [(not (contains? input :command))]}  ; command is implicit
-  (fn button-handler [msg]
-    (when (nil? (first (diff (conj input {:command :note-on}) msg))) (turn-on msg))
-    (when (nil? (first (diff (conj input {:command :note-off}) msg))) (turn-off msg))
-    (momentary input turn-on turn-off)))
+  {:pre [(not (contains? input :command))]}
+  
+  (turn-off input)
+  (momentary- input turn-on turn-off))
+
+
+; Toggle button
 
 (def toggle-state {:on :off
                    :off :on})
 
+(defn toggle- [state input turn-on turn-off]
+  (when (= state :on) (turn-on input))
+  (when (= state :off) (turn-off input))
+  (fn [msg]
+    (toggle-
+      (if (midi-match (conj input {:command :note-on}) msg)
+        (toggle-state state) state)
+      input turn-on turn-off)))
+
 (defn toggle
   [state input turn-on turn-off]
-  {:pre [(not (contains? input :command))]}  ; command is implicit
-  (fn button-handler [msg]
-    (when (nil? (first (diff (conj input {:command :note-on}) msg))))
-    (when (nil? (first (diff (conj input {:command :note-off}) msg))))
-    (toggle (toggle-state :off) input turn-on turn-off)))
+  {:pre [(not (contains? input :command))]}
+
+  (turn-off input)
+  (toggle- state input turn-on turn-off))
 
 
 ; MIDI event handler
@@ -32,7 +53,7 @@
   (fn [midi-msg]
     (loop [controls (deref controls)]
       (when-not (empty? controls)
-        ((first controls) midi-msg)  ; call topmost control fn with midi msg
+        ((first controls) midi-msg)
         (recur (rest controls))))))
 
 (defn midi-handler-flat
@@ -63,19 +84,16 @@
   (midi/midi-note-on mm1-out (:data1 msg) 2 4)
   msg)
 
-(defn mm1-toggle-press [state msg])
-
 
 ; Connect handler and controls to MIDI event
-
 
 (def controls* (atom [(momentary {:channel 4 :data1 19} mm1-on mm1-off)
                       (momentary {:channel 4 :data1 20} mm1-on mm1-off)
                       (momentary {:channel 4 :data1 23} mm1-on mm1-off)
                       (momentary {:channel 4 :data1 24} mm1-on mm1-off)
-                      (toggle :off {:channel 4 :data1 27} mm1-on mm1-off)
+                      (toggle :on {:channel 4 :data1 27} mm1-on mm1-off)
                       (toggle :off {:channel 4 :data1 28} mm1-on mm1-off)
-                      (toggle :off {:channel 4 :data1 31} mm1-on mm1-off)
+                      (toggle :on {:channel 4 :data1 31} mm1-on mm1-off)
                       (toggle :off {:channel 4 :data1 32} mm1-on mm1-off)]))
 
 (def receiver
