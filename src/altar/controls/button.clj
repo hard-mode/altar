@@ -30,20 +30,40 @@
                    :off :on})
 
 (defn toggle- [state input turn-on turn-off]
-  (when (= state :on) (turn-on input))
-  (when (= state :off) (turn-off input))
   (fn [msg]
-    (toggle-
-      (if (midi-match (conj input {:command :note-on}) msg)
-        (toggle-state state) state)
-      input turn-on turn-off)))
+    (let [matched (midi-match (conj input {:command :note-on}) msg)]
+      (when (and matched (= state :on)) (turn-off input))
+      (when (and matched (= state :off)) (turn-on input))
+      (toggle-
+        (if matched
+          (toggle-state state)
+          state)
+        input turn-on turn-off))))
 
 (defn toggle
   [state input turn-on turn-off]
   {:pre [(not (contains? input :command))]}
 
-  (turn-off input)
+  (when (= state :on) (turn-on input))
+  (when (= state :off) (turn-off input))
+
   (toggle- state input turn-on turn-off))
+
+
+; One of many
+
+(defn one-of-many- [state inputs turn-on turn-off]
+  (fn [msg]
+    (doall (map turn-off inputs))
+    (doall (map turn-on (filter #(midi-match % msg) inputs)))
+    (one-of-many- state inputs turn-on turn-off)))
+
+(defn one-of-many
+  [state inputs turn-on turn-off]
+  {:pre [(vector? inputs)]}
+  (doall (map turn-off inputs))
+  (turn-on (nth inputs state))
+  (one-of-many- state inputs turn-on turn-off))
 
 
 ; MIDI event handler
@@ -59,8 +79,8 @@
 (defn midi-handler-flat
   [control-atom]
   (fn [midi-msg]
-    (let [updated-control-atom (doall (map #(% midi-msg) (deref control-atom)))]
-      (reset! control-atom updated-control-atom))))
+    (reset! control-atom
+      (doall (map #(% midi-msg) (deref control-atom))))))
 
 
 ; Controller-specific stuff
@@ -94,7 +114,11 @@
                       (toggle :on {:channel 4 :data1 27} mm1-on mm1-off)
                       (toggle :off {:channel 4 :data1 28} mm1-on mm1-off)
                       (toggle :on {:channel 4 :data1 31} mm1-on mm1-off)
-                      (toggle :off {:channel 4 :data1 32} mm1-on mm1-off)]))
+                      (toggle :off {:channel 4 :data1 32} mm1-on mm1-off)
+                      (one-of-many 0 [{:channel 4 :data1 48}
+                                      {:channel 4 :data1 49}
+                                      {:channel 4 :data1 50}
+                                      {:channel 4 :data1 51}] mm1-on mm1-off)]))
 
 (def receiver
   (midi/midi-handle-events
