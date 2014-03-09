@@ -54,8 +54,10 @@
 
 (defn one-of-many- [state inputs turn-on turn-off]
   (fn [msg]
-    (doall (map turn-off inputs))
-    (doall (map turn-on (filter #(midi-match % msg) inputs)))
+    (let [matches (filter #(midi-match (conj % {:command :note-on}) msg) inputs)]
+      (when-not (empty? matches)
+        (doall (map turn-off inputs))
+        (doall (map turn-on matches))))
     (one-of-many- state inputs turn-on turn-off)))
 
 (defn one-of-many
