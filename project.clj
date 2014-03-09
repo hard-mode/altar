@@ -14,6 +14,5 @@
                  [org.jogamp.gluegen/gluegen-rt-main "2.1.2-rc-20131025"]]
 
   :aot [quil.helpers.applet-listener quil.applet]
-  :main ^:skip-aot altar.examples.mm1-example
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
