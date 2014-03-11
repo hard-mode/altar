@@ -25,8 +25,8 @@
 (defn toggle- [state input turn-on turn-off]
   (fn [msg]
     (let [matched (midi-match (conj input {:command :note-on}) msg)]
-      (when (and matched (= state :on)) (turn-off input))
-      (when (and matched (= state :off)) (turn-on input))
+      (when (and matched (= state :on)) (turn-off msg))
+      (when (and matched (= state :off)) (turn-on msg))
       (toggle-
         (if matched
           (toggle-state state)
@@ -48,9 +48,9 @@
 (defn one-of-many- [state inputs turn-on turn-off]
   (fn [msg]
     (let [matches (filter #(midi-match (conj % {:command :note-on}) msg) inputs)]
-      (when-not (empty? matches)  ; there can only be one match anyway
+      (when-not (empty? matches)
         (doall (map turn-off inputs))
-        (doall (map turn-on matches))))
+        (turn-on msg)))  ; there can only be one match anyway
     (one-of-many- state inputs turn-on turn-off)))
 
 (defn one-of-many
