@@ -33,11 +33,10 @@
     (when (= msg match)
       (println (str "captured by " match)))))
 
-((get-handler nil
-  (get-handler "a")
-  (get-handler "b"
-    (get-handler "c")
-    (get-handler "d"
-      (get-handler "e")))) "a")
-
-"a"
+(defn handle [msg]
+  ((get-handler nil
+    (get-handler "a")
+    (get-handler "b"
+      (get-handler "c")
+      (get-handler "d"
+        (get-handler "e")))) "a"))
