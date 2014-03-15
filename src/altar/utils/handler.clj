@@ -1,3 +1,5 @@
+(ns altar.utils.handler)
+
 ; lazy list and coalesce implementation via
 ; http://stackoverflow.com/a/4087160/425219
 
@@ -12,7 +14,7 @@
 
 (defmacro lazy-list
   [& values]
-  `(lazy-list* ~@(map (fn [v] `(delay ~v)) values))
+  `(lazy-list* ~@(map (fn [v] `(delay ~v)) values)))
 
 (defn coalesce*
   [values]
@@ -26,14 +28,15 @@
 ; Control message handlers
 
 (defn get-handler [match & child-handlers]
-  (println (str "initializing " formsg))
+  (println (str "initializing " match))
   (fn handler [msg]
-    (when (= msg formsg)
-      (println (str "captured by " formsg)))))
+    (when (= msg match)
+      (println (str "captured by " match)))))
 
-(get-handler nil
-  (get-handler "a")
-  (get-handler "b"
-    (get-handler "c")
-    (get-handler "d"
-      (get-handler "e"))))
+(defn handle [msg]
+  ((get-handler nil
+    (get-handler "a")
+    (get-handler "b"
+      (get-handler "c")
+      (get-handler "d"
+        (get-handler "e")))) "a"))
