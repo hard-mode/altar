@@ -1,6 +1,9 @@
 (ns altar.examples.sequencer
+  (:require [clojure.tools.namespace.repl :refer [disable-reload!]])
   (:use [overtone.core])
   (:require [overtone.midi :as midi]))
+
+(disable-reload!)
 
 ; (defonce *altar-control-surfaces* (ref {}))
 

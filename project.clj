@@ -7,6 +7,7 @@
 
   :repositories [["jogamp" "http://www.jogamp.org/deployment/maven/"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
+                 [org.clojure/tools.namespace "0.2.4"]
                  [overtone "0.9.1"]
                  [overtone/midi-clj "0.5.0"]
                  [org.clojars.originalsurfmex.processing/core "2.1"]

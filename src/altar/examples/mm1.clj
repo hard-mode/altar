@@ -1,9 +1,11 @@
 (ns altar.examples.mm1
+  (:require [clojure.tools.namespace.repl :refer [disable-reload!]])
   (:require [overtone.midi :as midi])
   (:require [altar.controls.button :refer [momentary toggle one-of-many]])
   (:require [altar.devices.behringer.mm1 :refer [mm1-map mm1-in mm1-on mm1-off]])
   (:require [altar.utils.midi :refer [midi-match midi-handler-flat]]))
 
+(disable-reload!)
 
 (defn mm1-momentary [input]
   (momentary input mm1-on mm1-off))
