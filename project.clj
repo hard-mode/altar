@@ -10,5 +10,8 @@
                  [overtone "0.9.1"]
                  [overtone/midi-clj "0.5.0"]]
 
+  :repl-options {:init-ns altar.scratch
+                 :init (load "scratch")}
+
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
