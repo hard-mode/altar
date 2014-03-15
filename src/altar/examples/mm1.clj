@@ -1,11 +1,8 @@
 (ns altar.examples.mm1
-  (:require [clojure.tools.namespace.repl :refer [disable-reload!]])
   (:require [overtone.midi :as midi])
   (:require [altar.controls.button :refer [momentary toggle one-of-many]])
   (:require [altar.devices.behringer.mm1 :refer [mm1-map mm1-in mm1-on mm1-off]])
   (:require [altar.utils.midi :refer [midi-match midi-handler-flat]]))
-
-(disable-reload!)
 
 (defn mm1-momentary [input]
   (momentary input mm1-on mm1-off))
@@ -54,18 +51,14 @@
   [page]
   `(map #(eval %) ~page))
 
-(def controls* (atom [
-  (one-of-many 0
-               [(-> mm1-map :track-a :btn-cue)
-                (-> mm1-map :track-b :btn-cue)
-                (-> mm1-map :track-c :btn-cue)
-                (-> mm1-map :track-d :btn-cue)]
-               (fn [msg]
-                (mm1-on msg)
-                (println msg))
-               mm1-off)]))
-
-(def receiver
+(defn start []
+  (let [controls* (atom [(one-of-many 0
+                            [(-> mm1-map :track-a :btn-cue)
+                             (-> mm1-map :track-b :btn-cue)
+                             (-> mm1-map :track-c :btn-cue)
+                             (-> mm1-map :track-d :btn-cue)]
+                            (fn [msg] (mm1-on msg) (println msg))
+                            mm1-off)])]
   (midi/midi-handle-events
     mm1-in
-    (midi-handler-flat controls*)))
+    (midi-handler-flat controls*))))
