@@ -1,36 +1,23 @@
 # altar
 
-FIXME: description
+MIDI control framework for Clojure.
+Based on [midi-clj](https://github.com/overtone/midi-clj)
 
 ## Installation
 
-Download from http://example.com/FIXME.
+Clone this repo and get hacking.
 
 ## Usage
 
-FIXME: explanation
-
-    $ java -jar altar-0.1.0-standalone.jar [args]
-
-## Options
-
-FIXME: listing of options this app accepts.
+    $ lein repl
 
 ## Examples
 
-...
-
 ### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
 
 ## License
 
-Copyright © 2014 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Copyright © 2014, Adam Avramov
+All rights reserved.
+Licensed under the BSD 2-Clause License.
+See file LICENSE for more info.
