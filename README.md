@@ -17,7 +17,6 @@ Clone this repo and get hacking.
 
 ## License
 
-Copyright © 2014, Adam Avramov
-All rights reserved.
-Licensed under the BSD 2-Clause License.
-See file LICENSE for more info.
+Copyright © 2014, Adam Avramov. All rights reserved.
+
+Licensed under the BSD 2-Clause License. See file LICENSE for more info.
