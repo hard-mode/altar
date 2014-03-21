@@ -15,16 +15,25 @@
 
 (def system nil)
 
+(defn dummy-handler [msg] (println "handled" msg))
+
 (defn init- []
   {:in "MM-1"
    :out "MM-1"
-   :brain (fn brain [msg] (println msg))})
+   :handler (atom (get-midi-handler
+                    {:channel 4 :data1 18}
+                    dummy-handler
+                    [(get-midi-handler {:channel 4 :data1 19} dummy-handler [
+                       (get-midi-handler {:channel 4 :data1 20} dummy-handler)])
+                     (get-midi-handler {:channel 4 :data1 21} dummy-handler)]))
+   :brain (fn brain [msg] (@(:handler system) msg))})
 
 (defn start- [system]
   (let [in (midi-in (:in system))]
     {:in in
      :out (midi-out (:out system))
-     :receiver (midi-handle-events in (:brain system))}))
+     :receiver (midi-handle-events in (:brain system))
+     :handler (:handler system)}))
 
 (defn stop- [system]
   (.close (-> system :in :device))

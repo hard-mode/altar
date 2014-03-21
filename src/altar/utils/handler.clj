@@ -5,7 +5,7 @@
   ([match matcher handle] (get-handler match matcher handle []))
   ([match matcher handle subhandlers]
     (fn handler [msg]
-      (if (matcher msg match)
+      (if (matcher match msg)
         (handle msg)
         (loop [subhandlers subhandlers]
           (if (empty? subhandlers)
@@ -16,5 +16,6 @@
 
 (defn get-midi-handler
   ([match handle] (get-handler match midi-match handle []))
-  ([match matcher handle subhandlers]
+  ([match handle subhandlers]
+    (println "initializing midi handler" match)
     (get-handler match midi-match handle subhandlers)))
