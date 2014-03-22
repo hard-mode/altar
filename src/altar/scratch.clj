@@ -1,7 +1,7 @@
 (ns altar.scratch
   (:require [clojure.tools.namespace.repl :refer [refresh]])
   (:require [overtone.midi :refer [midi-msg midi-in midi-out midi-handle-events]])
-  (:require [altar.devices.behringer.mm1 :refer [get-mm1-in get-mm1-on get-mm1-off]])
+  (:require [altar.devices.behringer.mm1 :refer [mm1-map get-mm1-in get-mm1-on get-mm1-off]])
   (:require [altar.utils.midi :refer [midi-match]])
   (:require [altar.utils.handler :refer [get-handler get-midi-handler]]))
 
@@ -17,11 +17,12 @@
 
 (defn momentary-handle- [match output]
   (fn [msg]
-    (when (= (:command msg) :note-on) (println "turning on")
-                                      ((:turn-on output) msg))
-    (when (= (:command msg) :note-off) (println "turning off")
-                                       ((:turn-off output) msg))
-    (momentary-handle- match)))
+    (when (midi-match match msg)
+      (when (= (:command msg) :note-on) (println "turning on")
+                                        ((:turn-on output) msg))
+      (when (= (:command msg) :note-off) (println "turning off")
+                                         ((:turn-off output) msg))
+      (momentary-handle- match output))))
 
 (defn momentary [match output]
   (momentary-init- match output)
@@ -45,21 +46,15 @@
 
 (def system nil)
 
-(defn init- []
-  {:in "MM-1", :out "MM-1"
-   :handler '({:channel 4 :data1 19}
-              dummy-handler
-              (({:channel 4 :data1 20} dummy-handler)
-               ({:channel 4 :data1 21} dummy-handler)))})
+(defn init- [] {:in "MM-1", :out "MM-1"})
 
 (defn start- [system]
-  (let [in (midi-in (:in system))
-        out (midi-out (:out system))
-        handler (prepare-handler {:in in :out out} (:handler system))
-        brain (fn brain [msg] (println)
-                              (println "received" msg)
-                              (println "handle returned" (handler msg)))]
-    {:in in, :out out, :handler handler, :brain brain
+  (let [in (midi-in (:in system)) out (midi-out (:out system))
+        outputs {:turn-on (get-mm1-on out)
+                 :turn-off (get-mm1-off out)}
+        controls (atom [(momentary (-> mm1-map :track-a :btn-1) outputs)])
+        brain (fn [msg] (doall (map #(% msg) (deref controls))))]
+    {:in in, :out out, :controls controls, :brain brain
      :receiver (midi-handle-events in brain)}))
 
 (defn stop- [system]
