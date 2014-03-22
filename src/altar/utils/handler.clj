@@ -2,7 +2,7 @@
   (:require [altar.utils.midi :refer [midi-match]]))
 
 (defn get-handler
-  ([matcher match handle] (get-handler matcher match handle []))
+  ([matcher match handle] (get-handler matcher match handle ()))
   ([matcher match handle subhandlers]
     (fn handler [msg]
       (if (matcher match msg)
@@ -15,6 +15,6 @@
               (recur (rest subhandlers)))))))))
 
 (defn get-midi-handler
-  ([match handle] (get-midi-handler match handle []))
+  ([match handle] (get-midi-handler match handle ()))
   ([match handle subhandlers]
     (get-handler midi-match match handle subhandlers)))

@@ -9,16 +9,19 @@
 
 (defn fx [x] (println (str "side effect of " x)) x)
 
-(defn dummy-handler [msg] (println "handled" msg))
+(defn dummy-handler [msg] (println "handled" msg) true)
 
 ; Momentary
 
 (defn momentary-init- [match output] ((:turn-off output) match))
 
 (defn momentary-handle- [match output]
-  (fn [msg] (when (= (:command msg) :note-on) (println "turning on") ((:turn-on output) msg))
-            (when (= (:command msg) :note-off) (println "turning off") ((:turn-off output) msg))
-            (momentary-handle- match)))
+  (fn [msg]
+    (when (= (:command msg) :note-on) (println "turning on")
+                                      ((:turn-on output) msg))
+    (when (= (:command msg) :note-off) (println "turning off")
+                                       ((:turn-off output) msg))
+    (momentary-handle- match)))
 
 (defn momentary [match output]
   (momentary-init- match output)
@@ -26,19 +29,17 @@
 
 ; Handlers preparation
 
-(defn prepare-handler- [context handler]
+(defn prepare-handler [context handler-options]
   (let [output {:turn-on (get-mm1-on (:out context))
                 :turn-off (get-mm1-off (:out context))}]
+    (println "preparing handler" handler-options)
     (get-midi-handler
-      (first handler)
-      (second handler)
-      (map #(prepare-handler- context %) (drop 2 handler)))))
+      (first handler-options)
+      dummy-handler
+      (map #(prepare-handler context %) (drop 2 handler-options)))))
 
-(defn prepare-handler [context handler]
-  (prepare-handler- context handler))
-
-(defn update-handler [handler message]
-  (handler message))
+(defn update-handler [handler msg]
+  (handler msg))
 
 ; System
 
@@ -46,15 +47,18 @@
 
 (defn init- []
   {:in "MM-1", :out "MM-1"
-   :handler '({:channel 4 :data1 19} momentary)})
+   :handler '({:channel 4 :data1 19}
+              dummy-handler
+              (({:channel 4 :data1 20} dummy-handler)
+               ({:channel 4 :data1 21} dummy-handler)))})
 
 (defn start- [system]
   (let [in (midi-in (:in system))
         out (midi-out (:out system))
         handler (prepare-handler {:in in :out out} (:handler system))
-        brain (fn brain [message] (println)
-                                  (println "handler" handler (type handler))
-                                  (println "message" message))]
+        brain (fn brain [msg] (println)
+                              (println "received" msg)
+                              (println "handle returned" (handler msg)))]
     {:in in, :out out, :handler handler, :brain brain
      :receiver (midi-handle-events in brain)}))
 
