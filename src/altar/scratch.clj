@@ -26,10 +26,15 @@
   (let [in (midi-in (:in system))
         out (midi-out (:out system))
         verbs (get-lc1-verbs out)
+
         controls (atom [(momentary (-> lc1-map :pads (nth 0)) verbs)
                         (momentary (-> lc1-map :pads (nth 1)) verbs)
                         (momentary (-> lc1-map :pads (nth 2)) verbs)
-                        (momentary (-> lc1-map :pads (nth 3)) verbs)])
+                        (momentary (-> lc1-map :pads (nth 3)) verbs)
+                        (momentary (-> lc1-map :pads (nth 4)) verbs)
+                        (momentary (-> lc1-map :pads (nth 5)) verbs)
+                        (momentary (-> lc1-map :pads (nth 6)) verbs)
+                        (momentary (-> lc1-map :pads (nth 7)) verbs)])
         brain (fn [msg] (doall (map #(% msg) (deref controls))))]
     {:in in, :out out,
      :verbs verbs, :controls controls, :brain brain
