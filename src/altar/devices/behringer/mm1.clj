@@ -1,38 +1,24 @@
 (ns altar.devices.behringer.mm1
   (:require [overtone.midi :as midi]))
 
+(def ^:const mm1-channel 4)
 
-; Controller-specific stuff
+(defn- mm1-track [^Integer n]
+  {:btn-1 {:channel mm1-channel :data1 (+ (* n 4) 19)}
+   :btn-2 {:channel mm1-channel :data1 (+ (* n 4) 20)}
+   :btn-cue {:channel mm1-channel :data1 (+ n 48)}})
+
+(def ^:const mm1-map
+  {:track-a (mm1-track 0)
+   :track-b (mm1-track 1)
+   :track-c (mm1-track 2)
+   :track-d (mm1-track 3)})
 
 (defn get-mm1-in [] (midi/midi-in "CMD MM-1"))
 
 (defn get-mm1-out [] (midi/midi-out "CMD MM-1"))
 
-(defn get-mm1-off [mm1-out]
-  (defn mm1-off [msg]
-    (println "off" (:data1 msg))
-    (midi/midi-note-on mm1-out (:data1 msg) 0 4)
-    msg))
-
-(defn get-mm1-on [mm1-out]
-  (defn mm1-on [msg]
-    (println "on" (:data1 msg))
-    (midi/midi-note-on mm1-out (:data1 msg) 1 4)
-    msg))
-
-(defn get-mm1-blink [mm1-out]
-  (defn mm1-blink [msg]
-    (println "blink" (:data1 msg))
-    (midi/midi-note-on mm1-out (:data1 msg) 2 4)
-    msg))
-
-
-(def mm1-map
-  {:track-a {:btn-1 {:channel 4 :data1 19} :btn-2 {:channel 4 :data1 20}
-             :btn-cue {:channel 4 :data1 48}}
-   :track-b {:btn-1 {:channel 4 :data1 23} :btn-2 {:channel 4 :data1 24}
-             :btn-cue {:channel 4 :data1 49}}
-   :track-c {:btn-1 {:channel 4 :data1 27} :btn-2 {:channel 4 :data1 28}
-             :btn-cue {:channel 4 :data1 50}}
-   :track-d {:btn-1 {:channel 4 :data1 31} :btn-2 {:channel 4 :data1 32}
-             :btn-cue {:channel 4 :data1 51}}})
+(defn get-mm1-verbs [mm1-out]
+  {:on (fn mm1-on [msg] (midi/midi-note-on mm1-out (:data1 msg) 1 mm1-channel) msg)
+   :off (fn mm1-off [msg] (midi/midi-note-on mm1-out (:data1 msg) 0 mm1-channel) msg)
+   :blink (fn mm1-blink [msg] (midi/midi-note-on mm1-out (:data1 msg) 2 mm1-channel) msg)})

@@ -4,43 +4,39 @@
 
 ; Momentary button
 
-(defn momentary- [input turn-on turn-off]
-  (fn [msg] (when (midi-match (conj input {:command :note-on}) msg) (turn-on msg))
-            (when (midi-match (conj input {:command :note-off}) msg) (turn-off msg))
-    (momentary- input turn-on turn-off)))
+(defn momentary-init- [match output] ((:off output) match))
 
-(defn momentary
-  [input turn-on turn-off]
-  {:pre [(not (contains? input :command))]}
-  
-  (turn-off input)
-  (momentary- input turn-on turn-off))
+(defn momentary-handle- [match output]
+  (fn [msg]
+    (when (midi-match match msg)
+      (when (= (:command msg) :note-on) ((:on output) msg))
+      (when (= (:command msg) :note-off) ((:off output) msg))
+      (momentary-handle- match output))))
+
+(defn momentary [match output]
+  (momentary-init- match output)
+  (momentary-handle- match output))
 
 
 ; Toggle button
 
-(def toggle-state {:on :off
-                   :off :on})
+(def ^:const toggle-state {:on :off
+                           :off :on})
 
-(defn toggle- [state input turn-on turn-off]
+(defn toggle-handler- [state match output]
   (fn [msg]
-    (let [matched (midi-match (conj input {:command :note-on}) msg)]
-      (when (and matched (= state :on)) (turn-off msg))
-      (when (and matched (= state :off)) (turn-on msg))
-      (toggle-
-        (if matched
-          (toggle-state state)
-          state)
-        input turn-on turn-off))))
+    (let [matched (midi-match (conj match {:command :note-on}) msg)]
+      (when (and matched (= state :on)) ((:off output) msg))
+      (when (and matched (= state :off)) ((:on output) msg))
+      (toggle-handler- (if matched (toggle-state state) state) match output))))
 
-(defn toggle
-  [state input turn-on turn-off]
-  {:pre [(not (contains? input :command))]}
+(defn toggle-init- [state match output]
+  (when (= state :on) ((:on output) match))
+  (when (= state :off) ((:off output) match)))
 
-  (when (= state :on) (turn-on input))
-  (when (= state :off) (turn-off input))
-
-  (toggle- state input turn-on turn-off))
+(defn toggle [state match output]
+  (toggle-init- state match output)
+  (toggle-handler- state match output))
 
 
 ; One of many

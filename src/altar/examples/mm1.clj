@@ -1,9 +1,9 @@
-(ns altar.examples.mm1
-  (:require [overtone.midi :as midi])
-  (:require [altar.controls.button :refer [momentary toggle one-of-many]])
-  (:require [altar.devices.behringer.mm1 :refer [mm1-map get-mm1-in
-                                                 get-mm1-on get-mm1-off]])
-  (:require [altar.utils.midi :refer [midi-match midi-handler-flat]]))
+; (ns altar.examples.mm1
+;   (:require [overtone.midi :as midi])
+;   (:require [altar.controls.button :refer [momentary toggle one-of-many]])
+;   (:require [altar.devices.behringer.mm1 :refer [mm1-map get-mm1-in
+;                                                  get-mm1-on get-mm1-off]])
+;   (:require [altar.utils.midi :refer [midi-match midi-handler-flat]]))
 
 
 ; (defn mm1-momentary [input]
