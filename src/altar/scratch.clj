@@ -1,7 +1,8 @@
 (ns altar.scratch
   (:require [clojure.tools.namespace.repl :refer [refresh]])
-  (:require [overtone.midi :refer [midi-msg midi-in midi-out midi-handle-events]])
-  ; (:require [altar.controls.button :refer [momentary]])
+  (:require [overtone.midi :refer [midi-msg midi-in midi-out midi-handle-events
+                                   midi-note-on midi-note-off]])
+  (:require [altar.controls.button :refer [momentary]])
   (:require [altar.devices.behringer.mm1 :refer [mm1-map get-mm1-verbs]])
   (:require [altar.devices.behringer.lc1 :refer [lc1-map get-lc1-verbs]])
   (:require [altar.utils.midi :refer [midi-match]])
@@ -14,19 +15,6 @@
 (defn dummy-handler [msg] (println "handled" msg) true)
 
 ; === Workspace ===
-
-(defn momentary-init- [match output] ((:off output) match))
-
-(defn momentary-handle- [match output]
-  (fn [msg]
-    (when (midi-match match msg)
-      (when (= (:command msg) :note-on) ((:on output) msg))
-      (when (= (:command msg) :note-off) ((:off output) msg))
-      (momentary-handle- match output))))
-
-(defn momentary [match output]
-  (momentary-init- match output)
-  (momentary-handle- match output))
 
 ; === System ===
 

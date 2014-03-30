@@ -7,7 +7,7 @@
   {:channel lc1-channel :data1 n :command :control-change})
 
 (defn- lc1-note-on [^Integer n]
-  {:channel lc1-channel :data1 n :command :note-on})
+  {:channel lc1-channel :data1 n})
 
 (def ^:const lc1-map
   {:encoders (map lc1-cc (range 16 24))
@@ -30,16 +30,17 @@
   (let [lc1-pads (:pads lc1-map)
         lc1-buttons (lazy-cat (:numbers lc1-map) (:mutes lc1-map)
                               (:solos lc1-map) (:recs lc1-map))]
+
     {:off (fn lc1-off [msg]
             (if (some #(= (:data1 msg) %) lc1-buttons)
-              (do (midi/midi-note-on lc1-out (:data1 msg) 0 lc1-channel) msg)
+              (midi/midi-note-on lc1-out (:data1 msg) 0 lc1-channel)
               (if (some #(= (:data1 msg) %) lc1-pads)
-                (do (midi/midi-note-on lc1-out (:data1 msg) 127 lc1-channel) msg)
+                (midi/midi-note-on lc1-out (:data1 msg) 127 lc1-channel)
                 false)))
 
-     :on (fn lc1-on [msg] 
+     :on (fn lc1-on [msg]
            (if (some #(= (:data1 msg %)) lc1-buttons)
-             (do (midi/midi-note-on lc1-out (:data1 msg) 1 lc1-channel) msg)
+             (midi/midi-note-on lc1-out (:data1 msg) 1 lc1-channel)
              (if (some #(= (:data1 msg %)) lc1-pads)
-               (do (midi/midi-note-on lc1-out (:data1 msg) 0 lc1-channel) msg)
+               (midi/midi-note-on lc1-out (:data1 msg) 0 lc1-channel)
                false)))}))

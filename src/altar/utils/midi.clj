@@ -3,6 +3,7 @@
 
 
 ; MIDI message matcher
+; TODO: Make :note match :note-on and :note-off?
 
 (defn midi-match [match msg]
   (nil? (first (diff match msg))))
