@@ -2,7 +2,7 @@
   (:require [clojure.tools.namespace.repl :refer [refresh]])
   (:require [overtone.midi :refer [midi-msg midi-in midi-out midi-handle-events
                                    midi-note-on midi-note-off]])
-  (:require [altar.controls.button :refer [momentary]])
+  (:require [altar.controls.button :refer [momentary toggle]])
   (:require [altar.devices.behringer.mm1 :refer [mm1-map get-mm1-verbs]])
   (:require [altar.devices.behringer.lc1 :refer [lc1-map get-lc1-verbs]])
   (:require [altar.utils.midi :refer [midi-match]])
@@ -16,6 +16,16 @@
 
 ; === Workspace ===
 
+(defn lc1-momentary-pads [verbs]
+  (for [x (range 0 32)]
+    (momentary (-> lc1-map :pads (nth x)) verbs)))
+
+(defn lc1-toggle-pads [verbs]
+  (for [x (range 0 32)]
+    (toggle :off (-> lc1-map :pads (nth x)) verbs)))
+
+(defn pages [controls])
+
 ; === System ===
 
 (def system nil)
@@ -26,16 +36,8 @@
   (let [in (midi-in (:in system))
         out (midi-out (:out system))
         verbs (get-lc1-verbs out)
-
-        controls (atom [(momentary (-> lc1-map :pads (nth 0)) verbs)
-                        (momentary (-> lc1-map :pads (nth 1)) verbs)
-                        (momentary (-> lc1-map :pads (nth 2)) verbs)
-                        (momentary (-> lc1-map :pads (nth 3)) verbs)
-                        (momentary (-> lc1-map :pads (nth 4)) verbs)
-                        (momentary (-> lc1-map :pads (nth 5)) verbs)
-                        (momentary (-> lc1-map :pads (nth 6)) verbs)
-                        (momentary (-> lc1-map :pads (nth 7)) verbs)])
-        brain (fn [msg] (doall (map #(% msg) (deref controls))))]
+        controls (atom (lc1-toggle-pads verbs))
+        brain (fn [msg] (swap! controls (fn [x] (doall (map #(% msg) x)))))]
     {:in in, :out out,
      :verbs verbs, :controls controls, :brain brain
      :receiver (midi-handle-events in brain)}))
