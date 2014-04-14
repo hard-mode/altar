@@ -26,10 +26,11 @@
 
 (defn pager-handler [pages verbs state]
   (fn ! [msg]
-    (when (midi-match {:command :note-on} msg)
-      (doseq [page pages]
-        ((verbs (if (midi-match (first page) msg) :on :off)) (first page))))
-      (pager-handler pages verbs state)))
+    (doseq [i (map-indexed vector (keys pages))]
+      (when (midi-match (last i) msg)
+        (doseq [c (keys pages)] ((verbs :off) c))
+        ((verbs :on) msg)))
+    (pager-handler pages verbs state)))
 
 (defn pager-init! [pages verbs state]
   (doseq [i (map-indexed vector pages)]
@@ -43,10 +44,11 @@
 
 (defn oneofmany-handler [controls verbs state]
   (fn ! [msg]
-    (when (midi-match {:command :note-on} msg)
-      (doseq [ctrl controls]
-        ((verbs (if (midi-match ctrl msg) :on :off)) ctrl)))
-      (oneofmany-handler controls verbs state)))
+    (doseq [i (map-indexed vector controls)]
+      (when (midi-match (last i) msg)
+        (doseq [c controls] ((verbs :off) c))
+        ((verbs :on) msg)))
+    (oneofmany-handler controls verbs state)))
 
 (defn oneofmany-init! [controls verbs state]
   (doseq [i (map-indexed vector controls)]
@@ -69,9 +71,13 @@
         out (midi-out (:out system))
         verbs (get-lc1-verbs out)
         controls (atom [(pager {(-> lc1-map :numbers (nth 0)) (lc1-toggle-pads verbs)
-                               (-> lc1-map :numbers (nth 1)) (lc1-momentary-pads verbs)} verbs 1)
+                                (-> lc1-map :numbers (nth 1)) (lc1-momentary-pads verbs)
+                                (-> lc1-map :numbers (nth 2)) (lc1-toggle-pads verbs)
+                                (-> lc1-map :numbers (nth 3)) (lc1-momentary-pads verbs)} verbs 0)
                         (oneofmany [(-> lc1-map :numbers (nth 4))
-                                    (-> lc1-map :numbers (nth 5))] verbs 1)])
+                                    (-> lc1-map :numbers (nth 5))
+                                    (-> lc1-map :numbers (nth 6))
+                                    (-> lc1-map :numbers (nth 7))] verbs 0)])
         brain (fn [msg] (swap! controls (fn [c] (doall (map #(% msg) c)))))]
     {:in in, :out out,
      :verbs verbs, :controls controls, :brain brain
