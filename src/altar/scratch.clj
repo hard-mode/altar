@@ -18,7 +18,8 @@
 
 (defn lc1-momentary-pads [verbs]
   (for [x (range 0 32)]
-    (momentary (-> lc1-map :pads (nth x)) verbs)))
+    (momentary (-> lc1-map :pads (nth x)) verbs))
+  true)
 
 (defn lc1-toggle-pads [verbs]
   (for [x (range 0 32)]
@@ -26,10 +27,12 @@
 
 (defn pager-handler [pages verbs state]
   (fn ! [msg]
-    (doseq [i (map-indexed vector (keys pages))]
-      (when (midi-match (last i) msg)
-        (doseq [c (keys pages)] ((verbs :off) c))
-        ((verbs :on) msg)))
+    (doseq [i (map-indexed vector pages)]
+      (when (midi-match (first (second i)) msg)
+        (doseq [c (keys pages)] ((verbs :off) c))  ; all controls off
+        ((verbs :on) msg)                          ; matched control on
+        (let [page (second (second i))]            ; load page
+          (println i page (apply page [verbs])))))
     (pager-handler pages verbs state)))
 
 (defn pager-init! [pages verbs state]
@@ -70,14 +73,11 @@
   (let [in (midi-in (:in system))
         out (midi-out (:out system))
         verbs (get-lc1-verbs out)
-        controls (atom [(pager {(-> lc1-map :numbers (nth 0)) (lc1-toggle-pads verbs)
-                                (-> lc1-map :numbers (nth 1)) (lc1-momentary-pads verbs)
-                                (-> lc1-map :numbers (nth 2)) (lc1-toggle-pads verbs)
-                                (-> lc1-map :numbers (nth 3)) (lc1-momentary-pads verbs)} verbs 0)
-                        (oneofmany [(-> lc1-map :numbers (nth 4))
-                                    (-> lc1-map :numbers (nth 5))
-                                    (-> lc1-map :numbers (nth 6))
-                                    (-> lc1-map :numbers (nth 7))] verbs 0)])
+        controls (atom [(pager {(-> lc1-map :numbers (nth 0)) lc1-toggle-pads
+                                (-> lc1-map :numbers (nth 1)) lc1-momentary-pads
+                                (-> lc1-map :numbers (nth 2)) lc1-toggle-pads
+                                (-> lc1-map :numbers (nth 3)) lc1-momentary-pads} verbs 0)
+                        (oneofmany (map #(-> lc1-map :numbers (nth %)) (range 4 8)) verbs 0)])
         brain (fn [msg] (swap! controls (fn [c] (doall (map #(% msg) c)))))]
     {:in in, :out out,
      :verbs verbs, :controls controls, :brain brain
