@@ -6,16 +6,16 @@
 
 (defn momentary-init! [match output] ((:off output) match))
 
-(defn momentary-handle! [match output]
-  (fn [msg]
+(defn momentary-handler [match output]
+  (fn ! [msg]
     (when (midi-match match msg)
       (when (= (:command msg) :note-on) ((:on output) msg))
       (when (= (:command msg) :note-off) ((:off output) msg))
-      (momentary-handle! match output))))
+      (momentary-handler match output))))
 
 (defn momentary [match output]
   (momentary-init! match output)
-  (momentary-handle! match output))
+  (momentary-handler match output))
 
 
 ; Toggle button
@@ -27,17 +27,17 @@
   (when (= state :on) ((:on output) match))
   (when (= state :off) ((:off output) match)))
 
-(defn toggle-handle! [state match output]
-  (fn [msg]
+(defn toggle-handler [state match output]
+  (fn ! [msg]
     (let [matched (midi-match (conj match {:command :note-on}) msg)
           new-state (toggle-state state)]
-      (toggle-handle!
+      (toggle-handler
         (if matched (do ((new-state output) msg) new-state) state)
         match output))))
 
 (defn toggle [state match output]
   (toggle-init! state match output)
-  (toggle-handle! state match output))
+  (toggle-handler state match output))
 
 
 ; One of many

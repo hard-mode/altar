@@ -24,7 +24,39 @@
   (for [x (range 0 32)]
     (toggle :off (-> lc1-map :pads (nth x)) verbs)))
 
-(defn pages [controls])
+(defn pager-handler [pages verbs state]
+  (fn ! [msg]
+    (when (midi-match {:command :note-on} msg)
+      (doseq [page pages]
+        ((verbs (if (midi-match (first page) msg) :on :off)) (first page))))
+      (pager-handler pages verbs state)))
+
+(defn pager-init! [pages verbs state]
+  (doseq [i (map-indexed vector pages)]
+    ((verbs (if (= (first i) state) :on :off)) (first (last i)))))
+
+(defn pager
+  ([pages verbs] (pager pages verbs 0))
+  ([pages verbs state]
+    (pager-init! pages verbs state)
+    (pager-handler pages verbs state)))
+
+(defn oneofmany-handler [controls verbs state]
+  (fn ! [msg]
+    (when (midi-match {:command :note-on} msg)
+      (doseq [ctrl controls]
+        ((verbs (if (midi-match ctrl msg) :on :off)) ctrl)))
+      (oneofmany-handler controls verbs state)))
+
+(defn oneofmany-init! [controls verbs state]
+  (doseq [i (map-indexed vector controls)]
+    ((verbs (if (= (first i) state) :on :off)) (last i))))
+
+(defn oneofmany
+  ([controls verbs] (oneofmany controls verbs 0))
+  ([controls verbs state]
+    (oneofmany-init! controls verbs state)
+    (oneofmany-handler controls verbs state)))
 
 ; === System ===
 
@@ -36,8 +68,11 @@
   (let [in (midi-in (:in system))
         out (midi-out (:out system))
         verbs (get-lc1-verbs out)
-        controls (atom (lc1-toggle-pads verbs))
-        brain (fn [msg] (swap! controls (fn [x] (doall (map #(% msg) x)))))]
+        controls (atom [(pager {(-> lc1-map :numbers (nth 0)) (lc1-toggle-pads verbs)
+                               (-> lc1-map :numbers (nth 1)) (lc1-momentary-pads verbs)} verbs 1)
+                        (oneofmany [(-> lc1-map :numbers (nth 4))
+                                    (-> lc1-map :numbers (nth 5))] verbs 1)])
+        brain (fn [msg] (swap! controls (fn [c] (doall (map #(% msg) c)))))]
     {:in in, :out out,
      :verbs verbs, :controls controls, :brain brain
      :receiver (midi-handle-events in brain)}))
