@@ -27,13 +27,21 @@
 
 (defn pager-handler [pages verbs state]
   (fn ! [msg]
-    (doseq [i (map-indexed vector pages)]
-      (when (midi-match (first (second i)) msg)
-        (doseq [c (keys pages)] ((verbs :off) c))  ; all controls off
-        ((verbs :on) msg)                          ; matched control on
-        (let [page (second (second i))]            ; load page
-          (println i page (apply page [verbs])))))
-    (pager-handler pages verbs state)))
+    (let [page-keys (map-indexed #(vector %1 (first %2)) pages)
+          state (first (filter (complement nil?) (for [p page-keys]
+                  (if (midi-match (second p) msg) (first p) nil))))]
+      (when state (doseq [c (keys pages)] ((verbs :off) c))
+                  ((verbs :on) (second (nth page-keys state))))
+      (pager-handler pages verbs state))))
+      ; (doseq [i indexed-pages]
+      ;   (let [page-num (first i)
+      ;         page-key (first (second i))
+      ;         page-contents (second (second i))]
+      ;     (when (midi-match page-key msg)
+      ;       (doseq [c (keys pages)] ((verbs :off) c))  ; all controls off
+      ;       ((verbs :on) msg)                          ; matched control on
+      ;       (let [page (second (second i))]            ; load page
+      ;         (println i page (apply page [verbs]))))))
 
 (defn pager-init! [pages verbs state]
   (doseq [i (map-indexed vector pages)]
@@ -44,6 +52,15 @@
   ([pages verbs state]
     (pager-init! pages verbs state)
     (pager-handler pages verbs state)))
+
+(defn oneofmany-handler [controls verbs state]
+  (fn ! [msg]
+    (let [indexed-controls (map-indexed vector controls)
+          state (first (filter (complement nil?) (for [p indexed-controls]
+                  (if (midi-match (second p) msg) (first p) nil))))]
+      (when state (doseq [c controls] ((verbs :off) c))
+                  ((verbs :on) (nth indexed-controls state)))
+      (oneofmany-handler controls verbs state))))
 
 (defn oneofmany-handler [controls verbs state]
   (fn ! [msg]
