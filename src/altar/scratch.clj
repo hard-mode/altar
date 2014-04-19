@@ -2,7 +2,7 @@
   (:require [clojure.tools.namespace.repl :refer [refresh]])
   (:require [overtone.midi :refer [midi-msg midi-in midi-out midi-handle-events
                                    midi-note-on midi-note-off]])
-  (:require [altar.controls.button :refer [momentary toggle]])
+  (:require [altar.controls.button :refer [momentary toggle oneofmany]])
   (:require [altar.devices.behringer.mm1 :refer [mm1-map get-mm1-verbs]])
   (:require [altar.devices.behringer.lc1 :refer [lc1-map get-lc1-verbs]])
   (:require [altar.utils.midi :refer [midi-match]])
@@ -10,29 +10,44 @@
 
 ; === Utilities ===
 
-(defn fx [x] (println (str "side effect of " x)) x)
+(def dummy-verbs {:on  (fn [msg] (print "\n=> on"  msg))
+                  :off (fn [msg] (print "\n=> off" msg))})
 
-(defn dummy-handler [msg] (println "handled" msg) true)
 
-; === Workspace ===
+; === LC1 mappings ===
 
-(defn lc1-momentary-pads [verbs]
+(defn lc1-momentary-pads
+  [verbs]
   (for [x (range 0 32)]
     (momentary (-> lc1-map :pads (nth x)) verbs))
   true)
 
-(defn lc1-toggle-pads [verbs]
+(defn lc1-toggle-pads
+  [verbs]
   (for [x (range 0 32)]
-    (toggle :off (-> lc1-map :pads (nth x)) verbs)))
+    (toggle (if (even? x) :on :off) (-> lc1-map :pads (nth x)) verbs)))
 
-(defn pager-handler [pages verbs state]
+
+; === Pager ===
+
+(defn pager-handler
+  [verbs pages]
   (fn ! [msg]
-    (let [page-keys (map-indexed #(vector %1 (first %2)) pages)
-          state (first (filter (complement nil?) (for [p page-keys]
-                  (if (midi-match (second p) msg) (first p) nil))))]
-      (when state (doseq [c (keys pages)] ((verbs :off) c))
-                  ((verbs :on) (second (nth page-keys state))))
-      (pager-handler pages verbs state))))
+    (let [page-pairs (map vector (take-nth 2 pages) (take-nth 2 (rest pages)))
+          indexed-keys (map-indexed vector (take-nth 2 pages))
+          matched-pages (map-indexed vector
+                          (filter #(midi-match (second %) msg) page-pairs))])
+      ; (println page-pairs indexed-keys matched-pages))
+      (pager-handler verbs pages)))
+      ; if matched, redraw
+      ; (when state
+      ;   (doseq [c indexed-keys] ((verbs :off) (second c)))     ; clear all
+      ;   ((verbs :on) (second (nth indexed-keys state)))  ; draw one
+      ;   (println page))  ; draw page
+
+      ; return next handler
+      ; (pager-handler pages verbs state))))
+
       ; (doseq [i indexed-pages]
       ;   (let [page-num (first i)
       ;         page-key (first (second i))
@@ -43,42 +58,16 @@
       ;       (let [page (second (second i))]            ; load page
       ;         (println i page (apply page [verbs]))))))
 
-(defn pager-init! [pages verbs state]
-  (doseq [i (map-indexed vector pages)]
-    ((verbs (if (= (first i) state) :on :off)) (first (last i)))))
+(defn pager-init!
+  [verbs pages])
+  ; (doseq [i (map-indexed vector (apply hash-map pages))]
+  ;   ((verbs (if (= (first i) state) :on :off)) (first (last i)))))
 
 (defn pager
-  ([pages verbs] (pager pages verbs 0))
-  ([pages verbs state]
-    (pager-init! pages verbs state)
-    (pager-handler pages verbs state)))
+  ([verbs pages]
+    (pager-init! verbs pages)
+    (pager-handler verbs pages)))
 
-(defn oneofmany-handler [controls verbs state]
-  (fn ! [msg]
-    (let [indexed-controls (map-indexed vector controls)
-          state (first (filter (complement nil?) (for [p indexed-controls]
-                  (if (midi-match (second p) msg) (first p) nil))))]
-      (when state (doseq [c controls] ((verbs :off) c))
-                  ((verbs :on) (nth indexed-controls state)))
-      (oneofmany-handler controls verbs state))))
-
-(defn oneofmany-handler [controls verbs state]
-  (fn ! [msg]
-    (doseq [i (map-indexed vector controls)]
-      (when (midi-match (last i) msg)
-        (doseq [c controls] ((verbs :off) c))
-        ((verbs :on) msg)))
-    (oneofmany-handler controls verbs state)))
-
-(defn oneofmany-init! [controls verbs state]
-  (doseq [i (map-indexed vector controls)]
-    ((verbs (if (= (first i) state) :on :off)) (last i))))
-
-(defn oneofmany
-  ([controls verbs] (oneofmany controls verbs 0))
-  ([controls verbs state]
-    (oneofmany-init! controls verbs state)
-    (oneofmany-handler controls verbs state)))
 
 ; === System ===
 
@@ -90,11 +79,15 @@
   (let [in (midi-in (:in system))
         out (midi-out (:out system))
         verbs (get-lc1-verbs out)
-        controls (atom [(pager {(-> lc1-map :numbers (nth 0)) lc1-toggle-pads
-                                (-> lc1-map :numbers (nth 1)) lc1-momentary-pads
-                                (-> lc1-map :numbers (nth 2)) lc1-toggle-pads
-                                (-> lc1-map :numbers (nth 3)) lc1-momentary-pads} verbs 0)
-                        (oneofmany (map #(-> lc1-map :numbers (nth %)) (range 4 8)) verbs 0)])
+
+        ; pager1 (partial pager verbs)
+        ; oneofmany1 (partial pager oneofmany)
+
+        controls (atom [(pager verbs [(-> lc1-map :numbers (nth 0)) lc1-toggle-pads
+                                      (-> lc1-map :numbers (nth 1)) lc1-momentary-pads
+                                      (-> lc1-map :numbers (nth 2)) lc1-toggle-pads
+                                      (-> lc1-map :numbers (nth 3)) lc1-momentary-pads])
+                        (oneofmany verbs 0 (map #(-> lc1-map :numbers (nth %)) (range 4 8)))])
         brain (fn [msg] (swap! controls (fn [c] (doall (map #(% msg) c)))))]
     {:in in, :out out,
      :verbs verbs, :controls controls, :brain brain

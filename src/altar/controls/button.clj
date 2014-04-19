@@ -42,17 +42,24 @@
 
 ; One of many
 
-(defn one-of-many- [state inputs turn-on turn-off]
-  (fn [msg]
-    (let [matches (filter #(midi-match (conj % {:command :note-on}) msg) inputs)]
-      (when-not (empty? matches)
-        (doall (map turn-off inputs))
-        (turn-on msg)))  ; there can only be one match anyway
-    (one-of-many- state inputs turn-on turn-off)))
+(defn oneofmany-handler
+  [verbs state many]
+  (fn ! [msg]
+    (let [state (first (filter (complement nil?)
+                  (for [p (map-indexed vector many)]
+                    (if (midi-match (assoc (second p) :command :note-on) msg)
+                      (first p) nil))))]
+      (when state (doseq [c many] ((verbs :off) c))
+                  ((verbs :on) (nth many state)))
+      (oneofmany-handler verbs state many))))
 
-(defn one-of-many
-  [state inputs turn-on turn-off]
-  {:pre [(vector? inputs)]}
-  (doall (map turn-off inputs))
-  (turn-on (nth inputs state))
-  (one-of-many- state inputs turn-on turn-off))
+(defn oneofmany-init!
+  [verbs state many]
+  (doseq [i (map-indexed vector many)]
+    ((verbs (if (= (first i) state) :on :off)) (last i))))
+
+(defn oneofmany
+  ([verbs many] (oneofmany verbs 0 many))
+  ([verbs state many]
+    (oneofmany-init! verbs state many)
+    (oneofmany-handler verbs state many)))
