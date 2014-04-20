@@ -32,16 +32,30 @@
         (toggle verbs mask new-state)))))
 
 
+(defn oneofmany-
+  "Shared by oneofmany and buttonbar. "
+  [f verbs initial-state many msg]
+    (let [matched (first (filter (complement nil?)
+            (for [p (map-indexed vector many)]
+              (if (midi-match (assoc (second p) :command :note-on) msg)
+                (first p) nil))))
+          new-state (if (nil? matched) initial-state matched)]
+      (f verbs new-state many)))
+
+
 (defn oneofmany
   "Only one can be on at a given time. "
   ([verbs many] (oneofmany verbs 0 many))
   ([verbs initial-state many]
-    (doseq [c many] ((verbs :off) c))
-    ((verbs :on) (nth many initial-state))
-    (fn ! [msg]
-      (let [matched (first (filter (complement nil?)
-              (for [p (map-indexed vector many)]
-                (if (midi-match (assoc (second p) :command :note-on) msg)
-                  (first p) nil))))
-            new-state (if (nil? matched) initial-state matched)]
-        (oneofmany verbs new-state many)))))
+    (doseq [c (map-indexed vector many)]
+      ((verbs (if (= initial-state (first c)) :on :off)) (second c)))
+    (partial oneofmany- oneofmany verbs initial-state many)))
+
+
+(defn buttonbar
+  "Same as above, but controls up to and including the active on light up. "
+  ([verbs many] (buttonbar verbs 0 many))
+  ([verbs initial-state many]
+    (doseq [c (map-indexed vector many)]
+      ((verbs (if (>= initial-state (first c)) :on :off)) (second c)))
+    (partial oneofmany- buttonbar verbs initial-state many)))

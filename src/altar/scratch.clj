@@ -2,7 +2,7 @@
   (:require [clojure.tools.namespace.repl :refer [refresh]])
   (:require [overtone.midi :refer [midi-msg midi-in midi-out midi-handle-events
                                    midi-note-on midi-note-off]])
-  (:require [altar.controls.button :refer [momentary toggle oneofmany]])
+  (:require [altar.controls.button :refer [momentary toggle oneofmany buttonbar]])
   (:require [altar.devices.behringer.mm1 :refer [mm1-map get-mm1-verbs]])
   (:require [altar.devices.behringer.lc1 :refer [lc1-map get-lc1-verbs]])
   (:require [altar.utils.midi :refer [midi-match midi-cmp]])
@@ -104,7 +104,7 @@
         controls (atom [
           (pager verbs [(n 1) page-toggles  (n 2) page-momentaries
                         (n 3) page-toggles  (n 4) page-momentaries])
-          (oneofmany verbs 0 (map n (range 5 9)))])
+          (buttonbar verbs 0 (map n (range 5 9)))])
 
         brain (fn [msg] (swap! controls (fn [c] (doall (map #(% msg) c)))))]
     {:in in, :out out, :verbs verbs, :controls controls, :brain brain
