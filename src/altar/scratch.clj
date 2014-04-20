@@ -53,19 +53,6 @@
     (pager-init! verbs pages initial)
     (pager-handler verbs pages initial)))
 
-(defn oom
-  ([verbs many] (oom verbs 0 many))
-  ([verbs initial-state many]
-    (doseq [c many] ((verbs :off) c))
-    ((verbs :on) (nth many initial-state))
-    (fn ! [msg]
-      (let [matched-state (first (filter (complement nil?)
-              (for [p (map-indexed vector many)]
-                (if (midi-match (assoc (second p) :command :note-on) msg)
-                  (first p) nil))))
-            new-state (if (nil? matched-state) initial-state matched-state)]
-        (oom verbs new-state many)))))
-
 
 
 ; Scratch

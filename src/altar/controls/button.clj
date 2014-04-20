@@ -43,7 +43,7 @@
 ; One of many
 
 (defn oneofmany
-  ([verbs many] (oom verbs 0 many))
+  ([verbs many] (oneofmany verbs 0 many))
   ([verbs initial-state many]
     (doseq [c many] ((verbs :off) c))
     ((verbs :on) (nth many initial-state))
