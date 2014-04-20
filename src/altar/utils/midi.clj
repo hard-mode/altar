@@ -3,13 +3,20 @@
 
 
 ; MIDI message matcher
-; TODO: Make :note match :note-on and :note-off?
 
-(defn midi-match [match msg]
+(defn midi-match
+  [match msg]
   (nil? (first (diff match msg))))
 
 
-; MIDI event handlers
+; MIDI comparator
+
+(defn midi-cmp [x y]
+  (compare [(:data1 x) (:data2 x)]
+           [(:data1 y) (:data2 y)]))
+
+
+; Old MIDI event handlers
 
 (defn midi-handler-recur
   [controls]
