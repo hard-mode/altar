@@ -9,21 +9,12 @@
   (:require [altar.utils.handler :refer [get-handler get-midi-handler]]))
 
 
+
 ; Utilities
 
 (def dummy-verbs {:on  (fn [msg] (print "\n=> on"  msg))
                   :off (fn [msg] (print "\n=> off" msg))})
 
-(defn page-momentaries
-  [verbs]
-  (for [x (range 0 32)]
-    (momentary (-> lc1-map :pads (nth x)) verbs))
-  true)
-
-(defn page-toggles
-  [verbs]
-  (for [x (range 0 32)]
-    (toggle (if (even? x) :on :off) (-> lc1-map :pads (nth x)) verbs)))
 
 
 ; Pager
@@ -62,10 +53,31 @@
     (pager-init! verbs pages initial)
     (pager-handler verbs pages initial)))
 
+(defn oom
+  ([verbs many] (oom verbs 0 many))
+  ([verbs initial-state many]
+    (doseq [c many] ((verbs :off) c))
+    ((verbs :on) (nth many initial-state))
+    (fn ! [msg]
+      (let [matched-state (first (filter (complement nil?)
+              (for [p (map-indexed vector many)]
+                (if (midi-match (assoc (second p) :command :note-on) msg)
+                  (first p) nil))))
+            new-state (if (nil? matched-state) initial-state matched-state)]
+        (oom verbs new-state many)))))
+
+
 
 ; Scratch
 
 (defn n [x] (-> lc1-map :numbers (nth (- x 1))))
+
+(defn page-momentaries [verbs]
+  (doall (for [x (range 0 32)] (momentary (-> lc1-map :pads (nth x)) verbs))))
+
+(defn page-toggles [verbs]
+  (doall (for [x (range 0 32)]
+    (toggle (if (even? x) :on :off) (-> lc1-map :pads (nth x)) verbs))))
 
 (def pages [(n 7) page-toggles  (n 1) page-momentaries
             (n 5) page-toggles  (n 3) page-momentaries (n 1) :foo])
@@ -73,6 +85,14 @@
 (def page-map (map list (take-nth 2 pages) (take-nth 2 (rest pages))))
 
 (def page-keys (page-keys- pages))
+
+
+
+; Clip slot
+
+; (defn clip-slot
+;   ([] (let [c (clip-inst)] (clip-slot c)))
+;   ([clip] (println clip)))
 
 
 

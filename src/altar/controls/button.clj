@@ -42,24 +42,15 @@
 
 ; One of many
 
-(defn oneofmany-handler
-  [verbs state many]
-  (fn ! [msg]
-    (let [state (first (filter (complement nil?)
-                  (for [p (map-indexed vector many)]
-                    (if (midi-match (assoc (second p) :command :note-on) msg)
-                      (first p) nil))))]
-      (when state (doseq [c many] ((verbs :off) c))
-                  ((verbs :on) (nth many state)))
-      (oneofmany-handler verbs state many))))
-
-(defn oneofmany-init!
-  [verbs state many]
-  (doseq [i (map-indexed vector many)]
-    ((verbs (if (= (first i) state) :on :off)) (last i))))
-
 (defn oneofmany
-  ([verbs many] (oneofmany verbs 0 many))
-  ([verbs state many]
-    (oneofmany-init! verbs state many)
-    (oneofmany-handler verbs state many)))
+  ([verbs many] (oom verbs 0 many))
+  ([verbs initial-state many]
+    (doseq [c many] ((verbs :off) c))
+    ((verbs :on) (nth many initial-state))
+    (fn ! [msg]
+      (let [matched-state (first (filter (complement nil?)
+              (for [p (map-indexed vector many)]
+                (if (midi-match (assoc (second p) :command :note-on) msg)
+                  (first p) nil))))
+            new-state (if (nil? matched-state) initial-state matched-state)]
+        (oneofmany verbs new-state many)))))
