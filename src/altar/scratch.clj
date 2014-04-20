@@ -55,6 +55,10 @@
 
 
 
+
+
+
+
 ; Scratch
 
 (defn n [x] (-> lc1-map :numbers (nth (- x 1))))
