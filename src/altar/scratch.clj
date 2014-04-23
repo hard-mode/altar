@@ -3,7 +3,7 @@
   (:require [overtone.midi :refer [midi-msg midi-in midi-out midi-handle-events
                                    midi-note-on midi-note-off]])
   (:require [altar.controls.button :refer [momentary toggle oneofmany buttonbar]])
-  (:require [altar.controls.page :refer [pages page-keys-]])
+  (:require [altar.controls.page :refer [pages]])
   (:require [altar.devices.behringer.mm1 :refer [mm1-map get-mm1-verbs]])
   (:require [altar.devices.behringer.lc1 :refer [lc1-map get-lc1-verbs]])
   (:require [altar.utils.handler :refer [get-handler get-midi-handler]]))
@@ -38,13 +38,6 @@
   (doall (for [x (range 0 8)]
     (buttonbar verbs (for [y (range 0 4)] (+ y (* x 4))) 2))))
 
-; (def ps [(n 7) page-toggles  (n 1) page-momentaries
-;          (n 5) page-toggles  (n 3) page-momentaries  (n 1) :foo])
-
-; (def page-map (map list (take-nth 2 ps) (take-nth 2 (rest ps))))
-
-; (def page-keys (page-keys- ps))
-
 
 
 ; Clip slot
@@ -69,8 +62,8 @@
 
         controls (atom [
           (pages verbs [(n 1) page-momentaries  (n 2) page-toggles
-                        (n 3) page-oneofmany  (n 4) page-buttonbars])
-          (buttonbar verbs (map n (range 5 9)) 1)])
+                        (n 3) page-oneofmany    (n 4) page-buttonbars] 1)
+          (buttonbar verbs (map n (range 5 9)) 2)])
 
         brain (fn [msg] (swap! controls (fn [c] (doall (map #(% msg) c)))))]
     {:in in, :out out, :verbs verbs, :controls controls, :brain brain
