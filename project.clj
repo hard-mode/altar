@@ -6,10 +6,10 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/tools.namespace "0.2.4"]
+                 [com.taoensso/timbre "3.1.6"]
                  [overtone "0.9.1"]
-                 [overtone/midi-clj "0.5.0"]
-
-                 [org.clojure/tools.namespace "0.2.4"]]
+                 [overtone/midi-clj "0.5.0"]]
 
   :repl-options {:init-ns altar.scratch}
 

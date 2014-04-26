@@ -11,16 +11,14 @@
   ([mask] (btn-push mask :off :off))
   ([mask state] (btn-push mask state state))
   ([mask base-state current-state]
-    (println "BTN INIT=>" mask base-state current-state)
     {:fn (fn ! [msg]
       (let [on  (midi-match (assoc mask :command :note-on)  msg)
             off (midi-match (assoc mask :command :note-off) msg)
             next-state (if on (toggle-state base-state)
                          (if off base-state
                            current-state))]
-        (println "BTN PUSH=>" on off)
         (btn-push mask base-state next-state)))
-     :output [current-state mask]
+     :output [[current-state mask]]
      :state current-state}))
 
 

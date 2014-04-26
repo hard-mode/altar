@@ -1,6 +1,8 @@
 (ns altar.system
+  (:require [clojure.data :refer [diff]])
   (:require [clojure.pprint :refer [pprint]])
   (:require [clojure.tools.namespace.repl :refer [refresh]])
+  (:require [taoensso.timbre :refer [debug]])
   (:require [overtone.midi :refer [midi-in midi-out midi-handle-events]])
   (:require [altar.controls.page :refer [group]]))
 
@@ -23,6 +25,17 @@
         (str "Unknown output" i)))))
 
 
+(defn state-updater [ctrls msg]
+  (debug "MIDI receive:" (dissoc msg :msg :device :note :velocity))
+  (debug "New state is:" (dissoc (swap! ctrls (fn [c] ((:fn c) msg))) :fn)))
+
+
+(defn state-watcher [_key _ref oldval newval]
+  (let [old (:output oldval)  neu (:output newval)]
+    (if (= old neu) nil
+      (debug "Updated"))))
+
+
 (defmacro defsystem [project-title & args]
  `(let [configuration#  (hash-map ~@args)
         conf#           (fn ([k#]    (get configuration# k# []))
@@ -35,11 +48,11 @@
                        (pprint ~'system))
 
     (defn ~'start- [s#]
-      (let [ctrls#    (conf# :controls)
+      (let [ins#      (init-control-inputs- (:controllers s#))
+            ctrls#    (conf# :controls)
             controls# (atom (if (vector? ctrls#) (apply group ctrls#) ctrls#))
-            ins#      (init-control-inputs- (:controllers s#))
-            brain#    (fn [msg#] (println "\nMSG=>" (dissoc msg# :msg :device))
-                                 (println "NEWCTRL=>" (swap! controls# (fn [c#] ((:fn c#) msg#)))))]
+            brain#    (partial state-updater controls#)]
+        (add-watch controls# :update state-watcher)
         {:ctrl-ins  ins#
          :ctrl-outs (init-control-outputs- (:controllers s#))
          :controls  controls#
@@ -50,7 +63,7 @@
                       (pprint ~'system))
 
     (defn ~'stop-  [s#]
-      (doseq [i# (:ctrl-ins s#)] (println i#) (.close (:transmitter i#)))
+      (doseq [i# (:ctrl-ins s#)] (.close (:transmitter i#)))
       {:controllers (conf# :controllers)})
     (defn ~'stop   [] (alter-var-root #'~'system ~'stop-)
                       (println (str "\nStopped project \"" ~project-title "\":"))
