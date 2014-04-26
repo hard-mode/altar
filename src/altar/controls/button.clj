@@ -24,7 +24,7 @@
   "Toggles between on and off states. "
   ([verbs mask] (toggle verbs mask :off))
   ([verbs mask initial-state]
-    ((initial-state verbs) mask)
+    ((verbs initial-state) mask)
     (fn ! [msg]
       (let [matched (midi-match (conj mask {:command :note-on}) msg)
             next-state (if matched (toggle-state initial-state) initial-state)]
@@ -39,13 +39,14 @@
 
 
 (defn oneofmany-update-
-  "Also used by buttonbar and pages. "
+  "Also used by buttonbar. "
   [f verbs many initial-state msg]
-    (let [matched (first (filter (complement nil?)
-            (for [p (map-indexed vector many)]
-              (if (midi-match (assoc (second p) :command :note-on) msg)
-                (first p) nil))))
-          next-state (if (nil? matched) initial-state matched)]
+    (let [next-state (or
+           (first (filter (complement nil?)
+             (for [p (map-indexed vector many)]
+               (if (midi-match (assoc (second p) :command :note-on) msg)
+                 (first p) nil))))
+           initial-state)]
       (f verbs many next-state)))
 
 
@@ -61,5 +62,6 @@
   "Buttons up to and including the one pressed light up. "
   ([verbs many] (buttonbar verbs many 0))
   ([verbs many initial-state]
+    (println "btnbar" "initial" initial-state "many" many)
     (oneofmany-render! >= verbs many initial-state)
     (partial oneofmany-update- buttonbar verbs many initial-state)))
