@@ -21,4 +21,5 @@
 
 (defsystem "Test Project"
   :controllers  [:midi "LC-1"]
-  :controls     (btn-push (n 1)))
+  :controls     [(btn-push (n 1))  (btn-push (n 2))
+                 (btn-push (n 5))  (btn-push (n 6))])

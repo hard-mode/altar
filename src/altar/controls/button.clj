@@ -18,7 +18,7 @@
                          (if off base-state
                            current-state))]
         (btn-push mask base-state next-state)))
-     :output [[current-state mask]]
+     :output [current-state mask]
      :state current-state}))
 
 

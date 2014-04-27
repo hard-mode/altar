@@ -1,4 +1,5 @@
 (ns altar.controls.page
+  (:require [clojure.pprint :refer [pprint]])
   #_(:require [altar.controls.button :refer [oneofmany oneofmany-update- oneofmany-render!]])
   (:require [altar.utils.midi :refer [midi-match midi-cmp]]))
 
@@ -18,12 +19,19 @@
 ;   (first (first (filter #(= (second %) mask) page-keys))))
 
 
-(defn group [& members]
+(defn group- [state output members]
   {:fn (fn [msg]
-    (println members)
-    (apply group
-      (doall (for [i members]
-        ((:fn i) msg)))))})
+    (let [next-members (doall (for [m members] ((:fn m) msg)))
+          next-state (concat (for [n next-members] (:state n)))
+          next-output (set (concat (for [n next-members] (:output n))))]
+      (group- next-state next-output next-members)))
+   :output output
+   :state state})
+
+
+(defn group
+  "Handles a number of controls, in order. "
+  [& members] (group- [] [] members))
 
 
 ; (defn pages-update-

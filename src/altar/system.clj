@@ -1,5 +1,5 @@
 (ns altar.system
-  (:require [clojure.data :refer [diff]])
+  (:require [clojure.set :refer [difference]])
   (:require [clojure.pprint :refer [pprint]])
   (:require [clojure.tools.namespace.repl :refer [refresh]])
   (:require [taoensso.timbre :refer [debug]])
@@ -25,15 +25,14 @@
         (str "Unknown output" i)))))
 
 
-(defn state-updater [ctrls msg]
+(defn state-updater [controls msg]
   (debug "MIDI receive:" (dissoc msg :msg :device :note :velocity))
-  (debug "New state is:" (dissoc (swap! ctrls (fn [c] ((:fn c) msg))) :fn)))
+  (debug "State is now:" (swap! controls (fn [c] ((:fn c) msg)))))
 
 
-(defn state-watcher [_key _ref oldval newval]
+(defn state-watcher [_ _ oldval newval]
   (let [old (:output oldval)  neu (:output newval)]
-    (if (= old neu) nil
-      (debug "Updated"))))
+    (if (= old neu) nil (debug "Updated" (difference neu old)))))
 
 
 (defmacro defsystem [project-title & args]
