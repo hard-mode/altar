@@ -45,7 +45,6 @@
 
 
 (defn state-watcher [verbs]
-  (println "MY VERBS ========+>" verbs)
   (fn [_ _ oldval newval]
     (let [old (:output oldval)  neu (:output newval)]
       (if (= old neu) nil
@@ -74,7 +73,7 @@
       (let [controllers#  (init-controllers! (:controllers s#))
             controls#     (atom (if (vector? ctrls#) (apply group ctrls#) ctrls#))
             brain#        (partial state-updater controls#)]
-        (add-watch controls# :update (state-watcher (get-output-verbs (:controllers s#))))
+        (add-watch controls# :update (state-watcher (get-output-verbs controllers#)))
         (doseq [c# controllers#] (midi-handle-events (:port-in c#) brain#))
         {:controllers    controllers#
          :controls       controls#
