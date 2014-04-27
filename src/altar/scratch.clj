@@ -7,6 +7,7 @@
                                    midi-note-on midi-note-off]])
 
   (:require [altar.system :refer [defsystem]])
+  (:require [altar.devices.generic :refer [generic-midi]])
   (:require [altar.devices.behringer.lc1 :refer [lc1-map]])
   (:require [altar.controls.button :refer [btn-push]])
   (:require [altar.controls.page :refer [group]]))
@@ -20,6 +21,6 @@
 
 
 (defsystem "Test Project"
-  :controllers  [:midi "LC-1"]
+  :controllers  [(generic-midi "LC-1")]
   :controls     [(btn-push (n 1))  (btn-push (n 2))
                  (btn-push (n 5))  (btn-push (n 6))])
