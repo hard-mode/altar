@@ -1,5 +1,5 @@
 (ns altar.devices.behringer.lc1
-  (:require [overtone.midi :as midi]))
+  (:require [overtone.midi :refer [midi-note-on midi-note-off]]))
 
 (def ^:const lc1-channel 7)
 
@@ -19,7 +19,15 @@
    :solos (map lc1-note (range 68 72))
    :recs (map lc1-note (range 72 76))})
 
-(defn lc1-n [x] (-> lc1-map :pads (nth (- x 1))))
+(defn lc1-e [x] (-> lc1-map :encoders (nth (- x 1))))
+
+(defn lc1-n [x] (-> lc1-map :numbers (nth (- x 1))))
+
+(defn lc1-p [x] (-> lc1-map :pads (nth (- x 1))))
+
+(defn lc1-m [x] (-> lc1-map :solos (nth (- x 1))))
+
+(defn lc1-s [x] (-> lc1-map :recs (nth (- x 1))))
 
 (defn lc1 []
  {:type :midi
@@ -33,13 +41,13 @@
                                 (get-data1 out :solos)   (get-data1 out :recs))]
       {:on  (fn [msg]
               (if (some #(= (:data1 msg) %) lc1-buttons)
-                (midi/midi-note-on out (:data1 msg) 1 lc1-channel)
+                (midi-note-on out (:data1 msg) 1 lc1-channel)
                   (if (some #(= (:data1 msg) %) lc1-pads)
-                    (midi/midi-note-on out (:data1 msg) 0 lc1-channel)
+                    (midi-note-on out (:data1 msg) 0 lc1-channel)
                     false)))
        :off (fn [msg]
               (if (some #(= (:data1 msg) %) lc1-buttons)
-                (midi/midi-note-on out (:data1 msg) 1 lc1-channel)
+                (midi-note-on out (:data1 msg) 0 lc1-channel)
                 (if (some #(= (:data1 msg) %) lc1-pads)
-                  (midi/midi-note-on out (:data1 msg) 0 lc1-channel)
+                  (midi-note-on out (:data1 msg) 127 lc1-channel)
                   false)))}))})
