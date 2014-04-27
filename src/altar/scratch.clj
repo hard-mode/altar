@@ -2,6 +2,7 @@
 
 (ns altar.scratch
   (:require [clojure.tools.namespace.repl :refer [refresh]])
+  (:require [clj-ns-browser.sdoc :refer [sdoc]])
   
   (:require [overtone.midi :refer [midi-msg midi-in midi-out midi-handle-events
                                    midi-note-on midi-note-off]])

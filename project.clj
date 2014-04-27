@@ -8,6 +8,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/tools.namespace "0.2.4"]
                  [com.taoensso/timbre "3.1.6"]
+                 [clj-ns-browser "1.3.1"]
                  [overtone "0.9.1"]
                  [overtone/midi-clj "0.5.0"]]
 
