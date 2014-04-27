@@ -1,5 +1,3 @@
-; i ne zabravqi, tati, da si importnesh bibliotekite
-
 (ns altar.scratch
   (:require [clojure.tools.namespace.repl :refer [refresh]])
   (:require [clj-ns-browser.sdoc :refer [sdoc]])
@@ -9,19 +7,12 @@
 
   (:require [altar.system :refer [defsystem]])
   (:require [altar.devices.generic :refer [generic-midi]])
-  (:require [altar.devices.behringer.lc1 :refer [lc1-map]])
+  (:require [altar.devices.behringer.lc1 :refer [lc1 lc1-n]])
   (:require [altar.controls.button :refer [btn-push]])
   (:require [altar.controls.page :refer [group]]))
 
 
-(def dummy-verbs {:on  (fn [msg] (print "\n=> on"  msg))
-                  :off (fn [msg] (print "\n=> off" msg))})
-
-
-(defn n [x] (-> lc1-map :numbers (nth (- x 1))))
-
-
 (defsystem "Test Project"
-  :controllers  [(generic-midi "LC-1")]
-  :controls     [(btn-push (n 1))  (btn-push (n 2))
-                 (btn-push (n 5))  (btn-push (n 6))])
+  :controllers  [(lc1)]
+  :controls     [(btn-push (lc1-n 1))  (btn-push (lc1-n 2))
+                 (btn-push (lc1-n 5))  (btn-push (lc1-n 6))])

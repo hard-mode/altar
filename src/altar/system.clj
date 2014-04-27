@@ -7,20 +7,6 @@
   (:require [altar.controls.page :refer [group]]))
 
 
-(defn init-control-inputs! [inputs]
-  (for [i inputs] (case (:type i)
-    :midi (assoc i :port-in (midi-in (:port-name-in i)))
-    (str "Unknown input" i))))
-
-
-(defn init-control-outputs! [outputs]
-  (for [i outputs] (case (:type i)
-    :midi (let [port-out (midi-out (:port-name-out i))]
-            (merge i {:port-out port-out
-                      :verbs ((:verbs i) port-out)}))
-    (str "Unknown output" i))))
-
-
 (defn init-controllers! [controllers]
   (for [c controllers] (case (:type c)
     :midi (let [port-in  (midi-in (:port-name-in c))
