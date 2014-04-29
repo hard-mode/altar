@@ -18,8 +18,9 @@
                          (if off base-state
                            current-state))]
         (btn-push mask base-state next-state)))
-     :output [(assoc mask :verb current-state)]
-     :state current-state}))
+     :mask mask
+     :state current-state
+     :output [(assoc mask :verb current-state)]}))
 
 
 (defn btn-switch
@@ -30,8 +31,9 @@
       (let [match      (midi-match (assoc mask :command :note-on) msg)
             next-state (if match (toggle-state state) state)]
         (btn-switch mask next-state)))
-     :output [(assoc mask :verb state)]
-     :state state}))
+     :mask mask
+     :state state
+     :output [(assoc mask :verb state)]}))
 
 
 (defn btn-switch-lazy
@@ -45,22 +47,28 @@
                              (midi-match (assoc mask :command :note-on) msg))
             next-state   (if (and pressed released) (toggle-state state) state)]
         (btn-switch-lazy mask next-state next-pressed)))
-     :output [(assoc mask :verb state)]
-     :state state}))
+     :mask mask
+     :state state
+     :pressed pressed
+     :output [(assoc mask :verb state)]}))
 
 
 (def btn-lazy btn-switch-lazy)
 
 
-; (defn btn-select
-;   "Only one out of several can be on at a given time. "
-;   ([many] (btn-select many (first many)))
-;   ([many state]
-;     {:fn (fn ! [msg]
-;       (let [next-state (or state (first (filter (complement nil?)
-;      :output  (for [mask many]
-;                 (assoc mask :verb (if (midi-match mask state) :on :off)))
-;      :state}))
+(defn btn-select
+  "Only one out of several can be on at a given time. "
+  ([many] (btn-select many (first many)))
+  ([many state]
+    {:fn (fn ! [msg]
+      (let [matches    (filter #(= (:state %) :on) 
+                         (for [mask many] ((:fn (btn-switch mask)) msg)))
+            next-state (or (get (first matches) :mask) state)]
+        (btn-select many next-state)))
+     :many many
+     :state state
+     :output (for [mask many] (assoc mask :verb (if (midi-match mask state)
+                                                 :on :off)))}))
 
 
 ; (defn oneofmany-render!
