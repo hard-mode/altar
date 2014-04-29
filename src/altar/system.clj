@@ -34,7 +34,7 @@
   (fn [_ _ oldval newval]
     (let [old (:output oldval)  neu (:output newval)]
       (if (= old neu) nil
-        (let [updated (difference neu old)]
+        (let [updated (apply concat (difference neu old))]
           (debug "Updated" updated)
           (doseq [u updated]
             (let [verb (get u :verb :nop)  params (dissoc u :verb)
@@ -69,8 +69,7 @@
                       (pprint ~'system))
 
     (defn ~'stop-  [s#]
-      (doseq [i# (:controllers s#)] (.close (-> i# :port-in :transmitter))
-                                    (.close (-> i# :port-out :transmitter)))
+      (doseq [i# (:controllers s#)] (.close (-> i# :port-in :device)))
       s#)
     (defn ~'stop   [] (alter-var-root #'~'system ~'stop-)
                       (info "Stopped project \"" ~project-title "\":")

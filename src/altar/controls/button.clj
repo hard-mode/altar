@@ -18,7 +18,7 @@
                          (if off base-state
                            current-state))]
         (btn-push mask base-state next-state)))
-     :output (assoc mask :verb current-state)
+     :output [(assoc mask :verb current-state)]
      :state current-state}))
 
 
@@ -30,47 +30,37 @@
       (let [match      (midi-match (assoc mask :command :note-on) msg)
             next-state (if match (toggle-state state) state)]
         (btn-switch mask next-state)))
-     :output (assoc mask :verb state)
+     :output [(assoc mask :verb state)]
      :state state}))
 
 
-(defn btn-lazy
+(defn btn-switch-lazy
   "Toggles between two states on release. "
-  ([mask] (btn-lazy mask :off false))
-  ([mask state] (btn-lazy mask :off false))
-  ([mask state waiting]
+  ([mask] (btn-switch-lazy mask :off false))
+  ([mask state] (btn-switch-lazy mask :off false))
+  ([mask state pressed]
     {:fn (fn ! [msg]
-      (let [next-waiting (midi-match (assoc mask :command :note-on)  msg)
-            match        (midi-match (assoc mask :command :note-off) msg)
-            next-state   (if (and match waiting) (toggle-state state) state)]
-        (btn-lazy mask next-state next-waiting)))
-     :output (assoc mask :verb state)
+      (let [released     (midi-match (assoc mask :command :note-off) msg)
+            next-pressed (or (and pressed (not released))
+                             (midi-match (assoc mask :command :note-on) msg))
+            next-state   (if (and pressed released) (toggle-state state) state)]
+        (btn-switch-lazy mask next-state next-pressed)))
+     :output [(assoc mask :verb state)]
      :state state}))
 
 
-; (defn momentary
-;   "Lights up when pressed. "
-;   ([verbs mask] (momentary verbs mask :off))
-;   ([verbs mask initial-state]
-;     ((verbs initial-state) mask)
+(def btn-lazy btn-switch-lazy)
+
+
+; (defn btn-select
+;   "Only one out of several can be on at a given time. "
+;   ([many] (btn-select many (first many)))
+;   ([many state]
 ;     {:fn (fn ! [msg]
-;       (let [matched (midi-match mask msg)
-;             on-state (assoc mask :command :note-on)
-;             next-state (if (midi-match on-state msg)
-;                         (toggle-state initial-state)
-;                         initial-state)]
-;         (momentary verbs mask next-state)))}))
-
-
-; (defn toggle
-;   "Toggles between on and off states. "
-;   ([verbs mask] (toggle verbs mask :off))
-;   ([verbs mask initial-state]
-;     ((verbs initial-state) mask)
-;     (fn ! [msg]
-;       (let [matched (midi-match (conj mask {:command :note-on}) msg)
-;             next-state (if matched (toggle-state initial-state) initial-state)]
-;         (toggle verbs mask next-state)))))
+;       (let [next-state (or state (first (filter (complement nil?)
+;      :output  (for [mask many]
+;                 (assoc mask :verb (if (midi-match mask state) :on :off)))
+;      :state}))
 
 
 ; (defn oneofmany-render!
