@@ -69,8 +69,9 @@
                       (pprint ~'system))
 
     (defn ~'stop-  [s#]
-      (doseq [i# (:controllers s#)] (.close (-> i# :port-in :transmitter)))
-      {:controllers (conf# :controllers)})
+      (doseq [i# (:controllers s#)] (.close (-> i# :port-in :transmitter))
+                                    (.close (-> i# :port-out :transmitter)))
+      s#)
     (defn ~'stop   [] (alter-var-root #'~'system ~'stop-)
                       (info "Stopped project \"" ~project-title "\":")
                       (pprint ~'system))

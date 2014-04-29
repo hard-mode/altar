@@ -12,14 +12,40 @@
   ([mask state] (btn-push mask state state))
   ([mask base-state current-state]
     {:fn (fn ! [msg]
-      (let [on  (midi-match (assoc mask :command :note-on)  msg)
-            off (midi-match (assoc mask :command :note-off) msg)
+      (let [on         (midi-match (assoc mask :command :note-on)  msg)
+            off        (midi-match (assoc mask :command :note-off) msg)
             next-state (if on (toggle-state base-state)
                          (if off base-state
                            current-state))]
         (btn-push mask base-state next-state)))
      :output (assoc mask :verb current-state)
      :state current-state}))
+
+
+(defn btn-switch
+  "Toggles between two states. "
+  ([mask] (btn-switch mask :off))
+  ([mask state]
+    {:fn (fn ! [msg]
+      (let [match      (midi-match (assoc mask :command :note-on) msg)
+            next-state (if match (toggle-state state) state)]
+        (btn-switch mask next-state)))
+     :output (assoc mask :verb state)
+     :state state}))
+
+
+(defn btn-lazy
+  "Toggles between two states on release. "
+  ([mask] (btn-lazy mask :off false))
+  ([mask state] (btn-lazy mask :off false))
+  ([mask state waiting]
+    {:fn (fn ! [msg]
+      (let [next-waiting (midi-match (assoc mask :command :note-on)  msg)
+            match        (midi-match (assoc mask :command :note-off) msg)
+            next-state   (if (and match waiting) (toggle-state state) state)]
+        (btn-lazy mask next-state next-waiting)))
+     :output (assoc mask :verb state)
+     :state state}))
 
 
 ; (defn momentary
